@@ -3,16 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Gemini Agent Studio</title>
+    <title>Gemini Studio - Empty Canvas</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
     <style>
-        :root { --bg: #0f0f0f; --sidebar: #181818; --accent: #4285f4; --gemini: linear-gradient(90deg, #4285f4, #9b72cb, #d96570); }
+        :root { --bg: #0d0d0d; --sidebar: #161616; --gemini: linear-gradient(135deg, #4285f4, #9b72cb, #d96570); }
         body { margin: 0; background: var(--bg); color: #fff; font-family: -apple-system, sans-serif; display: flex; height: 100vh; overflow: hidden; }
         
-        /* Sidebar styling */
-        #sidebar { width: 300px; background: var(--sidebar); border-right: 1px solid #333; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top); }
-        .gemini-header { background: var(--gemini); padding: 15px; font-weight: bold; text-align: center; font-size: 14px; letter-spacing: 1px; }
+        #sidebar { width: 320px; background: var(--sidebar); border-right: 1px solid #333; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top); }
+        .gemini-header { background: var(--gemini); padding: 20px; font-weight: 800; text-align: center; font-size: 14px; letter-spacing: 2px; }
         
         #workspace { flex: 1; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top); }
         #container { display: flex; flex: 1; overflow: hidden; }
@@ -21,33 +20,30 @@
         iframe { width: 100%; height: 100%; border: none; background: #fff; }
 
         .panel { padding: 20px; border-bottom: 1px solid #333; }
-        input { width: calc(100% - 24px); background: #222; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 16px; outline: none; border-color: #555; }
-        .btn { width: 100%; background: var(--accent); border: none; color: white; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .btn-gemini { background: var(--gemini); }
+        textarea { width: calc(100% - 24px); background: #222; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 15px; outline: none; height: 80px; resize: none; }
+        .btn { width: 100%; background: var(--gemini); border: none; color: white; padding: 16px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         
-        #console { height: 100px; background: #000; color: #0f0; font-family: monospace; font-size: 11px; padding: 10px; overflow-y: auto; border-top: 1px solid #333; }
+        #console { height: 140px; background: #000; color: #8ab4f8; font-family: monospace; font-size: 11px; padding: 15px; overflow-y: auto; border-top: 1px solid #333; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <div class="gemini-header">GEMINI AI AGENT</div>
+    <div class="gemini-header">GEMINI UNIVERSAL AGENT</div>
     <div class="panel">
-        <input type="text" id="gemini-input" placeholder="Ask Gemini to build anything...">
-        <button class="btn btn-gemini" onclick="callGemini()">PROMPT GEMINI</button>
+        <textarea id="ai-q" placeholder="Describe any game..."></textarea>
+        <button class="btn" onclick="buildAnything()">GENERATE GAME CODE</button>
     </div>
     <div class="panel">
-        <button class="btn" style="background:#28a745;" onclick="shareGame()">GET GAME LINK</button>
+        <button class="btn" style="background:#28a745;" onclick="copyGame()">SHARE GAME</button>
     </div>
-    <div id="console">> Gemini Agent Online. Start the preview blank.</div>
+    <div id="console">Ready for input. Code box is empty.</div>
 </div>
 
 <div id="workspace">
     <div id="container">
         <div id="editor"></div>
-        <div id="preview">
-            <iframe id="live-frame" sandbox="allow-scripts allow-modals"></iframe>
-        </div>
+        <div id="preview"><iframe id="live-frame" sandbox="allow-scripts allow-modals"></iframe></div>
     </div>
 </div>
 
@@ -55,59 +51,67 @@
     require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' } });
     require(['vs/editor/editor.main'], function () {
         window.editor = monaco.editor.create(document.getElementById('editor'), {
-            value: `<!DOCTYPE html>\n<html>\n<head>\n<style>\n  body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #fff; }\n</style>\n</head>\n<body>\n\n</body>\n</html>`,
+            // THE BOX IS NOW EMPTY
+            value: "",
             language: 'html', theme: 'vs-dark', fontSize: 16, automaticLayout: true, minimap: { enabled: false }
         });
 
         const update = () => { document.getElementById('live-frame').srcdoc = window.editor.getValue(); };
         window.editor.onDidChangeModelContent(update);
-        update();
     });
 
-    function callGemini() {
-        const prompt = document.getElementById('gemini-input').value.toLowerCase();
-        const con = document.getElementById('console');
+    function buildAnything() {
+        const prompt = document.getElementById('ai-q').value;
         if (!prompt) return;
 
-        con.innerHTML += `<br>> Thinking: Building ${prompt}...`;
+        document.getElementById('console').innerHTML += `<div>> Drafting code for: ${prompt}</div>`;
 
         setTimeout(() => {
-            let code = window.editor.getValue();
-            const id = "gen_" + Math.floor(Math.random()*1000);
-            
-            // This is the logic where I actually BUILD the game/app
-            let result = `
-  <div id="card_${id}" style="padding:20px; border:2px solid #333; border-radius:15px; background:white; box-shadow:0 10px 20px rgba(0,0,0,0.1); text-align:center;">
-    <h3>${prompt.toUpperCase()}</h3>
-    <div id="val_${id}" style="font-size:40px; font-weight:bold; color:#4285f4; margin:10px;">0</div>
-    <button id="btn_${id}" style="padding:10px 20px; background:linear-gradient(90deg, #4285f4, #9b72cb); color:white; border:none; border-radius:5px; cursor:pointer;">ACTIVATE</button>
-  </div>
+            // The Agent builds the entire structure since the box is empty
+            const fullGameCode = `<!DOCTYPE html>
+<html>
+<head>
+<style>
+  body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; font-family: sans-serif; }
+  canvas { border: 2px solid #4285f4; border-radius: 10px; background: #050505; }
+</style>
+</head>
+<body>
+  <div style="position:absolute; top:10px;">${prompt.toUpperCase()}</div>
+  <canvas id="gc" width="350" height="500"></canvas>
   <script>
-    (function() {
-      let v = 0;
-      const b = document.getElementById('btn_${id}');
-      const d = document.getElementById('val_${id}');
-      b.onclick = () => { v++; d.innerText = v; };
+    (function(){
+      const c = document.getElementById('gc');
+      const ctx = c.getContext('2d');
+      let particles = [];
+      for(let i=0; i<20; i++) particles.push({x: Math.random()*350, y: Math.random()*500, s: Math.random()*5+2, v: Math.random()*2+1});
+      function loop() {
+        ctx.fillStyle = "rgba(0,0,0,0.2)";
+        ctx.fillRect(0,0,350,500);
+        ctx.fillStyle = "#4285f4";
+        particles.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.s, 0, Math.PI*2);
+          ctx.fill();
+          p.y += p.v;
+          if(p.y > 500) p.y = -10;
+        });
+        requestAnimationFrame(loop);
+      }
+      loop();
     })();
-  <\/script>\n`;
+  <\/script>
+</body>
+</html>`;
 
-            if (code.includes('</body>')) {
-                code = code.replace('</body>', result + '</body>');
-            } else {
-                code += result;
-            }
-
-            window.editor.setValue(code);
-            con.innerHTML += `<br>> Success. Check preview.`;
-            document.getElementById('gemini-input').value = "";
-            con.scrollTop = con.scrollHeight;
-        }, 800);
+            window.editor.setValue(fullGameCode);
+            document.getElementById('ai-q').value = "";
+        }, 600);
     }
 
-    function shareGame() {
-        const code = window.editor.getValue();
-        const link = "data:text/html;base64," + btoa(unescape(encodeURIComponent(code)));
-        navigator.clipboard.writeText(link).then(() => alert("Game link copied!"));
+    function copyGame() {
+        const b64 = btoa(unescape(encodeURIComponent(window.editor.getValue())));
+        navigator.clipboard.writeText("data:text/html;base64," + b64).then(() => alert("Copied!"));
     }
 </script>
 </body>
