@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>iPad PyOS EOF-Fix</title>
+    <title>PyOS Type-Safe</title>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
     <style>
         :root { --accent: #bb86fc; --bg: #000; }
         body { margin: 0; background: var(--bg); color: #fff; font-family: system-ui; height: 100vh; display: flex; flex-direction: column; }
-        .tabs { display: flex; background: #111; border-bottom: 2px solid var(--accent); }
-        .tab-btn { flex: 1; padding: 15px; border: none; background: none; color: #666; font-weight: bold; }
-        .tab-btn.active { color: var(--accent); background: #1a1a1a; }
+        .tabs { display: flex; background: #111; }
+        .tab-btn { flex: 1; padding: 15px; border: none; background: none; color: #666; font-weight: bold; border-bottom: 2px solid #333; }
+        .tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
         .view { flex: 1; display: none; }
         .view.active { display: block; }
         textarea { width: 100%; height: 100%; background: #000; color: #0f0; padding: 15px; font-family: monospace; font-size: 16px; border: none; outline: none; box-sizing: border-box; }
-        #preview { background: white; color: black; height: 100%; padding: 15px; }
+        #preview { background: white; color: black; height: 100%; padding: 15px; overflow: auto; }
         .footer { padding: 15px; background: #1a1a1a; display: flex; gap: 10px; }
-        .run-btn { background: var(--accent); color: #000; padding: 15px; border: none; border-radius: 8px; font-weight: bold; width: 100%; }
+        button { background: var(--accent); color: #000; padding: 15px; border: none; border-radius: 8px; font-weight: bold; width: 100%; }
     </style>
 </head>
 <body>
@@ -27,30 +27,19 @@
     </div>
 
     <div id="ed" class="view active">
-        <textarea id="editor" spellcheck="false"># EOF ERROR FIXED
-# The agent patched 'input()' to stop crashes.
+        <textarea id="editor" spellcheck="false"># Type-Safe Code
+score = 74000
 
-def start_game():
-    display_html("""
-        <div style='text-align:center;'>
-            <h2>The Game</h2>
-            <button onclick='runPython("play_action()")' style='padding:20px;'>
-                CLICK TO PLAY
-            </button>
-        </div>
-    """)
+# This would usually cause a TypeError if not for the fix:
+display_html(score) 
 
-def play_action():
-    print("Action Button Clicked!")
-    display_html("<h1 style='color:green;'>YOU WON!</h1>")
-
-start_game()</textarea>
+print("System: Type-Safe Bridge Active")</textarea>
     </div>
 
     <div id="pre" class="view"><div id="preview"></div></div>
 
     <div class="footer">
-        <button class="run-btn" onclick="runPython()">RUN CODE</button>
+        <button onclick="runPython()">RUN CODE</button>
     </div>
 
     <script>
@@ -64,31 +53,29 @@ start_game()</textarea>
 
         async function init() {
             py = await loadPyodide();
-            window.display_html = (h) => { document.getElementById('preview').innerHTML = h; };
+            
+            // THE TYPE-SAFE BRIDGE
+            window.display_html = (data) => { 
+                // Force data to be a string so JS doesn't throw a TypeError
+                document.getElementById('preview').innerHTML = String(data); 
+            };
             
             await py.runPythonAsync(`
-import js, builtins
-
-# THE EOF FIX: Override input so it returns a blank string instead of crashing
-def mocked_input(prompt=""):
-    return ""
-builtins.input = mocked_input
-
+import js
 def display_html(h):
     js.display_html(h)
             `);
-            console.log("EOF Shield Active");
         }
         init();
 
-        async function runPython(specificCode = null) {
+        async function runPython() {
             if(!py) return;
             try {
-                const codeToRun = specificCode || document.getElementById('editor').value;
-                await py.runPythonAsync(codeToRun);
+                await py.runPythonAsync(document.getElementById('editor').value);
                 tab('pre');
             } catch (e) {
-                alert("Error: " + e);
+                // Shows the EXACT line and type of the error
+                alert(e);
             }
         }
     </script>
