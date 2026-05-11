@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>iPad PyOS Pro</title>
+    <title>PyOS Fixed Edition</title>
     
     <link rel="manifest" href="data:application/json;base64,ewogICJzaG9ydF9uYW1lIjogIlB5T1MiLAogICJuYW1lIjogIlB5dGhvbiBPZmZsaW5lIE9TIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwMDAwMDAiLAogICJ0aGVtZV9jb2xvciI6ICIjYmI4NmZjIgp9">
 
@@ -11,92 +11,89 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
     <style>
-        :root { --accent: #bb86fc; --bg: #000; --panel: #1a1a1a; }
-        body { margin: 0; background: var(--bg); color: #fff; font-family: -apple-system, sans-serif; height: 100vh; display: flex; flex-direction: column; }
+        :root { --accent: #bb86fc; --bg: #000; --panel: #1a1a1a; --error: #ff5555; }
+        body { margin: 0; background: var(--bg); color: #fff; font-family: -apple-system, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* 1. THE LINK GENERATOR BAR */
+        /* HEADER DASHBOARD */
         .status-dashboard { 
-            background: #222; 
-            padding: 15px; 
-            border-bottom: 2px solid var(--accent);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            background: #111; padding: 12px; border-bottom: 2px solid var(--accent);
+            display: flex; justify-content: space-between; align-items: center;
         }
-        #link-display { 
-            background: #000; 
-            padding: 10px; 
-            border-radius: 8px; 
-            color: #03dac6; 
-            font-family: monospace; 
-            font-size: 18px;
-            text-align: center;
-            border: 1px dashed #444;
-        }
+        #link-display { color: #03dac6; font-family: monospace; font-size: 14px; }
 
-        /* 2. THE MAIN TABS */
+        /* TABS */
         .tab-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .tab-buttons { display: flex; background: #111; }
-        .tab-btn { flex: 1; padding: 15px; border: none; background: transparent; color: #888; font-weight: bold; }
-        .tab-btn.active { color: var(--accent); border-bottom: 3px solid var(--accent); background: #1a1a1a; }
+        .tab-buttons { display: flex; background: #000; border-bottom: 1px solid #333; }
+        .tab-btn { flex: 1; padding: 15px; border: none; background: transparent; color: #666; font-weight: bold; font-size: 14px; }
+        .tab-btn.active { color: var(--accent); background: #1a1a1a; border-bottom: 2px solid var(--accent); }
         
-        .tab-content { flex: 1; display: none; overflow: auto; }
+        .tab-content { flex: 1; display: none; overflow: auto; position: relative; }
         .tab-content.active { display: block; }
 
-        /* EDITOR & PREVIEW */
-        #editor { width: 100%; height: 100%; background: #000; color: #9cdcfe; padding: 20px; font-family: monospace; font-size: 18px; border: none; outline: none; box-sizing: border-box; }
-        #preview-pane { background: white; color: black; min-height: 100%; padding: 20px; }
+        /* COMPONENTS */
+        #editor { width: 100%; height: 100%; background: #000; color: #9cdcfe; padding: 15px; font-family: 'Consolas', monospace; font-size: 16px; border: none; outline: none; box-sizing: border-box; }
+        #preview-pane { background: white; color: black; min-height: 100%; padding: 15px; }
+        #console-pane { background: #000; color: #0f0; font-family: monospace; padding: 15px; white-space: pre-wrap; font-size: 13px; }
 
-        /* AGENT & CONTROLS */
-        .controls { padding: 15px; background: #1a1a1a; display: flex; gap: 10px; }
+        /* FOOTER CONTROLS */
+        .controls { padding: 15px; background: #1a1a1a; display: flex; gap: 8px; align-items: center; border-top: 1px solid #333; }
         .agent-input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #000; color: #fff; font-size: 16px; }
-        button.action-btn { padding: 12px 20px; border-radius: 8px; border: none; background: var(--accent); color: #000; font-weight: bold; }
+        button.action-btn { padding: 12px 18px; border-radius: 8px; border: none; background: var(--accent); color: #000; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="status-dashboard">
-        <div style="font-size: 12px; color: #888; text-transform: uppercase;">Server Link / Host ID</div>
-        <div id="link-display">NOT HOSTING - CLICK 'START HOST' BELOW</div>
+        <div id="link-display">ENGINE: STARTING...</div>
+        <button onclick="startHost()" style="background:transparent; color:var(--accent); border:1px solid var(--accent); border-radius:4px; padding:4px 8px; font-size:10px;">START HOST</button>
     </div>
 
     <div class="tab-container">
         <div class="tab-buttons">
-            <button class="tab-btn active" onclick="openTab('editor-tab', this)">CODE EDITOR</button>
-            <button class="tab-btn" onclick="openTab('preview-tab', this)">LIVE PREVIEW</button>
+            <button class="tab-btn active" onclick="openTab('editor-tab', this)">EDITOR</button>
+            <button class="tab-btn" onclick="openTab('preview-tab', this)">PREVIEW</button>
+            <button class="tab-btn" onclick="openTab('console-tab', this)">CONSOLE</button>
         </div>
 
         <div id="editor-tab" class="tab-content active">
-            <textarea id="editor" spellcheck="false"># iPad Agent OS
-print("Hello idk12!")
+            <textarea id="editor" spellcheck="false"># Fix applied: Virtual I/O active
+import os
 
-html = """
-<div style='text-align:center'>
-  <h1 style='color:purple'>UI Active</h1>
-  <p>Your server is running on iPad</p>
-</div>
-"""
-display_html(html)</textarea>
+# Create a game file
+with open("save_data.txt", "w") as f:
+    f.write("Level: 10\nCoins: 74000")
+
+print("File saved to Virtual Disk!")
+
+# Read it back
+with open("save_data.txt", "r") as f:
+    data = f.read()
+    print("Loaded Data:\n", data)
+
+display_html(f"<div style='padding:20px; background:#eee'><h3>Game Loaded</h3><pre>{data}</pre></div>")</textarea>
         </div>
 
         <div id="preview-tab" class="tab-content">
-            <div id="preview-pane">
-                <p style="color: grey; text-align: center; margin-top: 50px;">Click 'RUN CODE' to see the preview here.</p>
-            </div>
+            <div id="preview-pane"></div>
+        </div>
+
+        <div id="console-tab" class="tab-content">
+            <div id="console-pane">Console ready...</div>
         </div>
     </div>
 
-    <div class="controls">
-        <input type="text" id="agent-in" class="agent-input" placeholder="Agent command (e.g. 'button')">
-        <button class="action-btn" onclick="runPython()">RUN CODE</button>
-        <button class="action-btn" style="background:#03dac6" onclick="startHost()">START HOST</button>
+    <div class="footer-agent">
+        <div id="agent-hint" style="padding: 5px 15px; font-size: 11px; color: var(--accent);">Agent: I can fix I/O errors and generate UI.</div>
+        <div class="controls">
+            <input type="text" id="agent-in" class="agent-input" placeholder="Ask agent...">
+            <button class="action-btn" onclick="runPython()">RUN</button>
+        </div>
     </div>
 
     <script>
         let py;
         let peer;
 
-        // --- TAB LOGIC ---
         function openTab(tabId, btn) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -104,34 +101,48 @@ display_html(html)</textarea>
             btn.classList.add('active');
         }
 
-        // --- INITIALIZE ---
         async function init() {
             py = await loadPyodide();
             window.display_html = (h) => { document.getElementById('preview-pane').innerHTML = h; };
-            await py.runPython(`import js\ndef display_html(h): js.display_html(h)`);
-            document.getElementById('link-display').innerText = "ENGINE READY - STANDBY";
+            
+            // I/O FIX: Create a virtual home directory
+            await py.runPythonAsync(`
+                import os, js
+                def display_html(h): js.display_html(h)
+                if not os.path.exists('/home/pyodide'):
+                    os.makedirs('/home/pyodide', exist_ok=True)
+                os.chdir('/home/pyodide')
+            `);
+            
+            document.getElementById('link-display').innerText = "SYSTEM: READY (OFFLINE)";
         }
         init();
 
-        // --- RUN LOGIC ---
         async function runPython() {
             if(!py) return;
+            const consoleDiv = document.getElementById('console-pane');
+            consoleDiv.innerText = "Running...\n";
             try {
                 await py.runPythonAsync(`import sys, io; sys.stdout = io.StringIO()`);
                 await py.runPythonAsync(document.getElementById('editor').value);
-                // Auto-switch to preview on iPad so you see the result!
+                const stdout = py.runPython("sys.stdout.getvalue()");
+                consoleDiv.innerText = stdout || "Done (No console output)";
+                
+                // Auto-switch to preview to see game UI
                 openTab('preview-tab', document.querySelectorAll('.tab-btn')[1]);
-            } catch (e) { alert(e); }
+            } catch (e) {
+                consoleDiv.innerText = "ERROR:\n" + e;
+                consoleDiv.style.color = "var(--error)";
+                openTab('console-tab', document.querySelectorAll('.tab-btn')[2]);
+            }
         }
 
-        // --- HOST LINK GENERATOR ---
         function startHost() {
             if(peer) return;
-            const id = 'idk12-host-' + Math.floor(Math.random() * 999);
+            const id = 'py-host-' + Math.floor(Math.random() * 1000);
             peer = new Peer(id);
-            peer.on('open', (generatedId) => {
-                document.getElementById('link-display').innerText = "LIVE LINK ID: " + generatedId;
-                document.getElementById('link-display').style.borderColor = "#03dac6";
+            peer.on('open', (gid) => {
+                document.getElementById('link-display').innerText = "HOST ID: " + gid;
             });
             peer.on('connection', (conn) => {
                 conn.on('open', () => {
@@ -140,12 +151,15 @@ display_html(html)</textarea>
             });
         }
 
-        // Agent Injection (Simplest helper)
+        // Agent Commands
         document.getElementById('agent-in').addEventListener('keydown', (e) => {
             if(e.key === 'Enter') {
                 let cmd = e.target.value.toLowerCase();
-                if(cmd.includes('button')) {
-                    document.getElementById('editor').value += '\ndisplay_html("<button style=\'padding:20px; width:100%\'>Big iPad Button</button>")';
+                if(cmd.includes('list')) {
+                    document.getElementById('editor').value += '\nprint("Files:", os.listdir("."))';
+                    runPython();
+                } else if(cmd.includes('button')) {
+                    document.getElementById('editor').value += '\ndisplay_html("<button style=\'padding:20px\'>New Button</button>")';
                     runPython();
                 }
                 e.target.value = '';
