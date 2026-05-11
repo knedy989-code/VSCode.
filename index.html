@@ -2,123 +2,155 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python Offline OS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>iPad PyOS Pro</title>
     
-    <meta name="mobile-web-app-capable" content="yes">
-    <link rel="manifest" href="data:application/json;base64,ewogICJpZCI6ICJQeXRob25PZmZsaW5lIiwKICAic2hvcnRfbmFtZSI6ICJQeXRPUyIsCiAgIm5hbWUiOiAiUHl0aG9uIE9mZmxpbmUgQWdlbnQgT1MiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzBlMGUwZSIsCiAgInRoZW1lX2NvbG9yIjogIiM2MjAwZWUiCn0=">
+    <link rel="manifest" href="data:application/json;base64,ewogICJzaG9ydF9uYW1lIjogIlB5T1MiLAogICJuYW1lIjogIlB5dGhvbiBPZmZsaW5lIE9TIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwMDAwMDAiLAogICJ0aGVtZV9jb2xvciI6ICIjYmI4NmZjIgp9">
 
     <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
     <style>
-        :root { --bg: #0e0e0e; --panel: #1a1a1a; --text: #e0e0e0; --accent: #bb86fc; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        :root { --accent: #bb86fc; --bg: #000; --panel: #1a1a1a; }
+        body { margin: 0; background: var(--bg); color: #fff; font-family: -apple-system, sans-serif; height: 100vh; display: flex; flex-direction: column; }
         
-        /* Sidebars */
-        .sidebar { width: 260px; background: var(--panel); border-right: 1px solid #333; display: flex; flex-direction: column; padding: 15px; }
-        .main { flex: 1; display: flex; flex-direction: column; position: relative; }
-        
-        /* Agent Section */
-        .agent-box { background: #252525; border-radius: 8px; padding: 10px; margin-top: auto; border: 1px solid var(--accent); }
-        #agent-input { width: 100%; background: transparent; border: none; color: white; outline: none; margin-top: 10px; border-top: 1px solid #444; padding-top: 10px; }
-        .agent-msg { font-size: 13px; color: var(--accent); margin-bottom: 5px; }
+        /* 1. THE LINK GENERATOR BAR */
+        .status-dashboard { 
+            background: #222; 
+            padding: 15px; 
+            border-bottom: 2px solid var(--accent);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #link-display { 
+            background: #000; 
+            padding: 10px; 
+            border-radius: 8px; 
+            color: #03dac6; 
+            font-family: monospace; 
+            font-size: 18px;
+            text-align: center;
+            border: 1px dashed #444;
+        }
 
-        /* Editor & Preview */
-        #editor { flex: 1; background: var(--bg); color: #9cdcfe; border: none; padding: 20px; font-family: 'Consolas', monospace; font-size: 15px; outline: none; resize: none; }
-        .bottom-panes { height: 35%; display: flex; border-top: 1px solid #333; }
-        .pane { flex: 1; overflow: auto; padding: 10px; border-right: 1px solid #333; font-family: monospace; }
-        #preview { background: white; color: black; }
+        /* 2. THE MAIN TABS */
+        .tab-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .tab-buttons { display: flex; background: #111; }
+        .tab-btn { flex: 1; padding: 15px; border: none; background: transparent; color: #888; font-weight: bold; }
+        .tab-btn.active { color: var(--accent); border-bottom: 3px solid var(--accent); background: #1a1a1a; }
         
-        button { background: var(--accent); color: black; border: none; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
-        .status { font-size: 11px; color: #666; margin-bottom: 15px; }
+        .tab-content { flex: 1; display: none; overflow: auto; }
+        .tab-content.active { display: block; }
+
+        /* EDITOR & PREVIEW */
+        #editor { width: 100%; height: 100%; background: #000; color: #9cdcfe; padding: 20px; font-family: monospace; font-size: 18px; border: none; outline: none; box-sizing: border-box; }
+        #preview-pane { background: white; color: black; min-height: 100%; padding: 20px; }
+
+        /* AGENT & CONTROLS */
+        .controls { padding: 15px; background: #1a1a1a; display: flex; gap: 10px; }
+        .agent-input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #000; color: #fff; font-size: 16px; }
+        button.action-btn { padding: 12px 20px; border-radius: 8px; border: none; background: var(--accent); color: #000; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <h3>PyOS Agent</h3>
-        <div class="status" id="status">Loading Offline Engine...</div>
-        
-        <button onclick="runPython()">▶ Run Project</button>
-        <button onclick="toggleHost()" style="background: #03dac6;">🌐 Host Server</button>
-        
-        <div class="agent-box">
-            <div class="agent-msg" id="agent-out">I'm your coding agent. Try: "make a button" or "clear code".</div>
-            <input type="text" id="agent-input" placeholder="Ask agent to do something..." onkeydown="if(event.key==='Enter') askAgent()">
+    <div class="status-dashboard">
+        <div style="font-size: 12px; color: #888; text-transform: uppercase;">Server Link / Host ID</div>
+        <div id="link-display">NOT HOSTING - CLICK 'START HOST' BELOW</div>
+    </div>
+
+    <div class="tab-container">
+        <div class="tab-buttons">
+            <button class="tab-btn active" onclick="openTab('editor-tab', this)">CODE EDITOR</button>
+            <button class="tab-btn" onclick="openTab('preview-tab', this)">LIVE PREVIEW</button>
+        </div>
+
+        <div id="editor-tab" class="tab-content active">
+            <textarea id="editor" spellcheck="false"># iPad Agent OS
+print("Hello idk12!")
+
+html = """
+<div style='text-align:center'>
+  <h1 style='color:purple'>UI Active</h1>
+  <p>Your server is running on iPad</p>
+</div>
+"""
+display_html(html)</textarea>
+        </div>
+
+        <div id="preview-tab" class="tab-content">
+            <div id="preview-pane">
+                <p style="color: grey; text-align: center; margin-top: 50px;">Click 'RUN CODE' to see the preview here.</p>
+            </div>
         </div>
     </div>
 
-    <div class="main">
-        <textarea id="editor" spellcheck="false"># Active Coding
-print("System Online")
-
-display_html("<h1>Welcome to PyOS</h1>")</textarea>
-        
-        <div class="bottom-panes">
-            <div class="pane" style="color: #0f0;" id="console">Console initialized...</div>
-            <div class="pane" id="preview"></div>
-        </div>
+    <div class="controls">
+        <input type="text" id="agent-in" class="agent-input" placeholder="Agent command (e.g. 'button')">
+        <button class="action-btn" onclick="runPython()">RUN CODE</button>
+        <button class="action-btn" style="background:#03dac6" onclick="startHost()">START HOST</button>
     </div>
 
     <script>
-        let pyodide;
-        const editor = document.getElementById("editor");
-        const agentOut = document.getElementById("agent-out");
+        let py;
+        let peer;
 
+        // --- TAB LOGIC ---
+        function openTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        // --- INITIALIZE ---
         async function init() {
-            pyodide = await loadPyodide();
-            window.display_html = (h) => { document.getElementById("preview").innerHTML = h; };
-            await pyodide.runPython(`import js\ndef display_html(h): js.display_html(h)`);
-            document.getElementById("status").innerText = "OFFLINE READY";
+            py = await loadPyodide();
+            window.display_html = (h) => { document.getElementById('preview-pane').innerHTML = h; };
+            await py.runPython(`import js\ndef display_html(h): js.display_html(h)`);
+            document.getElementById('link-display').innerText = "ENGINE READY - STANDBY";
         }
         init();
 
-        // --- THE ACTIVE AGENT LOGIC ---
-        function askAgent() {
-            const input = document.getElementById("agent-input");
-            const cmd = input.value.toLowerCase();
-            input.value = "";
-
-            if (cmd.includes("button")) {
-                agentOut.innerText = "Generating button code...";
-                editor.value += `\ndisplay_html("<button style='padding:20px; background:purple; color:white;'>Dynamic Button</button>")`;
-                runPython();
-            } else if (cmd.includes("clear")) {
-                editor.value = "";
-                agentOut.innerText = "Code cleared.";
-            } else if (cmd.includes("loop")) {
-                editor.value += `\nfor i in range(5):\n    print(f"Looping: {i}")`;
-                agentOut.innerText = "Added a for-loop.";
-            } else if (cmd.includes("hello")) {
-                agentOut.innerText = "Hello! I can write loops, buttons, and clear your console.";
-            } else {
-                agentOut.innerText = "I don't know that yet. Try 'make a button'.";
-            }
-        }
-
+        // --- RUN LOGIC ---
         async function runPython() {
+            if(!py) return;
             try {
-                await pyodide.runPythonAsync(`import sys, io; sys.stdout = io.StringIO()`);
-                await pyodide.runPythonAsync(editor.value);
-                document.getElementById("console").innerText = pyodide.runPython("sys.stdout.getvalue()");
-            } catch (e) { document.getElementById("console").innerText = e; }
+                await py.runPythonAsync(`import sys, io; sys.stdout = io.StringIO()`);
+                await py.runPythonAsync(document.getElementById('editor').value);
+                // Auto-switch to preview on iPad so you see the result!
+                openTab('preview-tab', document.querySelectorAll('.tab-btn')[1]);
+            } catch (e) { alert(e); }
         }
 
-        // --- SERVICE WORKER (OFFLINE SUPPORT) ---
-        if ('serviceWorker' in navigator) {
-            const swCode = `
-                const CACHE_NAME = 'py-offline-v1';
-                const ASSETS = [
-                    'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js',
-                    'https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js'
-                ];
-                self.addEventListener('install', e => e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS))));
-                self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));
-            `;
-            const blob = new Blob([swCode], { type: 'text/javascript' });
-            navigator.serviceWorker.register(URL.createObjectURL(blob));
+        // --- HOST LINK GENERATOR ---
+        function startHost() {
+            if(peer) return;
+            const id = 'idk12-host-' + Math.floor(Math.random() * 999);
+            peer = new Peer(id);
+            peer.on('open', (generatedId) => {
+                document.getElementById('link-display').innerText = "LIVE LINK ID: " + generatedId;
+                document.getElementById('link-display').style.borderColor = "#03dac6";
+            });
+            peer.on('connection', (conn) => {
+                conn.on('open', () => {
+                    conn.send(document.getElementById('preview-pane').innerHTML);
+                });
+            });
         }
+
+        // Agent Injection (Simplest helper)
+        document.getElementById('agent-in').addEventListener('keydown', (e) => {
+            if(e.key === 'Enter') {
+                let cmd = e.target.value.toLowerCase();
+                if(cmd.includes('button')) {
+                    document.getElementById('editor').value += '\ndisplay_html("<button style=\'padding:20px; width:100%\'>Big iPad Button</button>")';
+                    runPython();
+                }
+                e.target.value = '';
+            }
+        });
     </script>
 </body>
 </html>
