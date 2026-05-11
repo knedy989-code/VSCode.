@@ -3,27 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pure Python Slap Battles</title>
+    <title>idk12 Slap Battles Pro</title>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        body { margin: 0; background: #000; color: #fff; font-family: monospace; display: flex; flex-direction: column; height: 100vh; }
-        .tabs { display: flex; background: #111; }
-        .tab { flex: 1; padding: 15px; text-align: center; border-bottom: 2px solid #333; }
-        .tab.active { border-bottom: 2px solid #bb86fc; color: #bb86fc; }
-        #editor { flex: 1; width: 100%; background: #000; color: #0f0; padding: 20px; font-size: 16px; border: none; outline: none; resize: none; }
-        #preview { background: #fff; color: #000; height: 40%; overflow: auto; }
-        .run { background: #bb86fc; color: #000; padding: 20px; font-weight: bold; border: none; font-size: 18px; }
+        body { margin: 0; background: #000; color: #fff; font-family: monospace; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        #editor { flex: 1; width: 100%; background: #000; color: #bb86fc; padding: 20px; font-size: 16px; border: none; outline: none; border-bottom: 2px solid #222; }
+        #preview { background: #fff; color: #000; height: 45%; overflow: auto; }
+        .run-btn { background: #03dac6; color: #000; padding: 15px; font-weight: bold; border: none; font-size: 18px; width: 100%; }
     </style>
 </head>
 <body>
 
-    <div class="tabs">
-        <div class="tab active">PYTHON EDITOR</div>
-    </div>
-
-    <textarea id="editor" spellcheck="false">
-# --- WRITE ONLY PYTHON BELOW ---
+<textarea id="editor" spellcheck="false">
+# --- PYTHON EDITOR ---
 import js
 
 slaps = 74204
@@ -34,40 +27,45 @@ def slap():
     render()
 
 def render():
-    # Use standard Python f-strings
+    # This is the Python code that tells the iPad what to show
     ui = f"""
-    <div style='text-align:center; padding:20px;'>
-        <h1>SLAP BATTLES</h1>
-        <h2 style='font-size:50px;'>🖐️ {slaps}</h2>
-        <button onclick='runPython("slap()")' style='padding:20px; background:cyan; border-radius:10px; font-weight:bold;'>SLAP!</button>
+    <div style='text-align:center; padding:20px; font-family:sans-serif;'>
+        <h1 style='color:purple;'>SLAP BATTLES</h1>
+        <div style='font-size:60px; margin:10px;'>🖐️ {slaps}</div>
+        
+        <button onclick='runPython("slap()")' style='padding:20px 40px; background:cyan; border-radius:50px; font-weight:bold; border:none;'>SLAP!</button>
+        
         <br><br>
-        <button onclick='create_link()' style='padding:10px; background:#bb86fc;'>GET INVITE LINK</button>
+        
+        <button onclick='create_link()' style='padding:10px 20px; background:#bb86fc; border-radius:10px; border:none; color:white;'>GENERATE INVITE LINK</button>
     </div>
     """
     display_html(ui)
 
 render()
-    </textarea>
+</textarea>
 
-    <div id="preview"></div>
-    <button class="run" onclick="runPython()">RUN PYTHON ONLY</button>
+<div id="preview"></div>
+<button class="run-btn" onclick="runPython()">RUN PROJECT</button>
 
-    <script>
-        // THIS IS THE HIDDEN ENGINE - YOU NEVER HAVE TO TOUCH THIS
-        let py;
-        let peer;
-        async function init() {
-            py = await loadPyodide();
-            window.display_html = (h) => { document.getElementById('preview').innerHTML = String(h); };
-            window.create_link = () => {
-                const id = 'idk12-' + Math.floor(Math.random()*9999);
-                peer = new Peer(id);
-                peer.on('open', (i) => {
-                    const link = window.location.origin + window.location.pathname + '?join=' + i;
-                    alert("SHARE THIS LINK:\n" + link);
-                });
-            };
-            await py.runPythonAsync(`
+<script>
+    /* --- THE HIDDEN ENGINE (DO NOT TOUCH) --- */
+    let py;
+    let peer;
+    async function init() {
+        py = await loadPyodide();
+        window.display_html = (h) => { document.getElementById('preview').innerHTML = String(h); };
+        window.create_link = () => {
+            const id = 'idk12-' + Math.floor(Math.random()*9999);
+            peer = new Peer(id);
+            peer.on('open', (i) => {
+                const link = window.location.href.split('?')[0] + '?join=' + i;
+                // THIS COPIES IT AND ALERTS YOU
+                navigator.clipboard.writeText(link);
+                alert("LINK COPIED TO CLIPBOARD:\n" + link);
+            });
+        };
+        await py.runPythonAsync(`
 import sys, io, os, js
 class Shield(io.StringIO):
     def flush(self): pass
@@ -77,16 +75,14 @@ sys.stdout = sys.stderr = Shield()
 os.environ['HOME'] = '/tmp'
 os.chdir('/tmp')
 def display_html(h): js.display_html(h)
-            `);
-            console.log("Python Engine Ready");
-        }
-        init();
-        async function runPython() {
-            if(!py) return;
-            try {
-                await py.runPythonAsync(document.getElementById('editor').value);
-            } catch (e) { alert("Python Error: " + e); }
-        }
-    </script>
+        `);
+    }
+    init();
+    async function runPython() {
+        if(!py) return;
+        try { await py.runPythonAsync(document.getElementById('editor').value); }
+        catch (e) { alert("Error: " + e); }
+    }
+</script>
 </body>
 </html>
