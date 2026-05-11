@@ -3,98 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python Background Host</title>
+    <title>Python Offline OS</title>
     
     <meta name="mobile-web-app-capable" content="yes">
-    <link rel="manifest" href="data:application/json;base64,ewogICJpZCI6ICJQeXRob25CYWNrZ3JvdW5kIiwKICAic2hvcnRfbmFtZSI6ICJQeXRob25CZyIsCiAgIm5hbWUiOiAiQmFja2dyb3VuZCBQeXRob24gU2VydmVyIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMxZTFlMWUiLAogICJ0aGVtZV9jb2xvciI6ICIjMWUxZTFlIgp9">
+    <link rel="manifest" href="data:application/json;base64,ewogICJpZCI6ICJQeXRob25PZmZsaW5lIiwKICAic2hvcnRfbmFtZSI6ICJQeXRPUyIsCiAgIm5hbWUiOiAiUHl0aG9uIE9mZmxpbmUgQWdlbnQgT1MiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzBlMGUwZSIsCiAgInRoZW1lX2NvbG9yIjogIiM2MjAwZWUiCn0=">
 
     <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
     <style>
-        :root { --bg: #121212; --accent: #bb86fc; }
-        body { background: var(--bg); color: white; font-family: system-ui; margin: 0; padding: 20px; }
-        .card { background: #1e1e1e; padding: 20px; border-radius: 12px; border: 1px solid #333; }
-        textarea { width: 100%; height: 200px; background: #000; color: #0f0; border: 1px solid #444; border-radius: 8px; font-family: monospace; padding: 10px; box-sizing: border-box; }
-        .status-bar { display: flex; align-items: center; gap: 10px; margin-top: 15px; }
-        .dot { height: 10px; width: 10px; border-radius: 50%; background: #555; }
-        .dot.active { background: #03dac6; box-shadow: 0 0 8px #03dac6; }
-        button { background: var(--accent); color: black; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+        :root { --bg: #0e0e0e; --panel: #1a1a1a; --text: #e0e0e0; --accent: #bb86fc; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Sidebars */
+        .sidebar { width: 260px; background: var(--panel); border-right: 1px solid #333; display: flex; flex-direction: column; padding: 15px; }
+        .main { flex: 1; display: flex; flex-direction: column; position: relative; }
+        
+        /* Agent Section */
+        .agent-box { background: #252525; border-radius: 8px; padding: 10px; margin-top: auto; border: 1px solid var(--accent); }
+        #agent-input { width: 100%; background: transparent; border: none; color: white; outline: none; margin-top: 10px; border-top: 1px solid #444; padding-top: 10px; }
+        .agent-msg { font-size: 13px; color: var(--accent); margin-bottom: 5px; }
+
+        /* Editor & Preview */
+        #editor { flex: 1; background: var(--bg); color: #9cdcfe; border: none; padding: 20px; font-family: 'Consolas', monospace; font-size: 15px; outline: none; resize: none; }
+        .bottom-panes { height: 35%; display: flex; border-top: 1px solid #333; }
+        .pane { flex: 1; overflow: auto; padding: 10px; border-right: 1px solid #333; font-family: monospace; }
+        #preview { background: white; color: black; }
+        
+        button { background: var(--accent); color: black; border: none; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+        .status { font-size: 11px; color: #666; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h3>Background Python Server</h3>
-        <textarea id="editor" oninput="localStorage.setItem('bg_code', this.value)"># This code runs in the background
-print("Server Heartbeat...")
-display_html("<h1 style='color:cyan'>Background Active</h1>")</textarea>
+    <div class="sidebar">
+        <h3>PyOS Agent</h3>
+        <div class="status" id="status">Loading Offline Engine...</div>
         
-        <div class="status-bar">
-            <div id="status-light" class="dot"></div>
-            <span id="status-text">Engine Offline</span>
+        <button onclick="runPython()">▶ Run Project</button>
+        <button onclick="toggleHost()" style="background: #03dac6;">🌐 Host Server</button>
+        
+        <div class="agent-box">
+            <div class="agent-msg" id="agent-out">I'm your coding agent. Try: "make a button" or "clear code".</div>
+            <input type="text" id="agent-input" placeholder="Ask agent to do something..." onkeydown="if(event.key==='Enter') askAgent()">
         </div>
+    </div>
+
+    <div class="main">
+        <textarea id="editor" spellcheck="false"># Active Coding
+print("System Online")
+
+display_html("<h1>Welcome to PyOS</h1>")</textarea>
         
-        <button onclick="runAndHost()">🚀 Start Background Host</button>
-        <p id="peer-id" style="font-size: 12px; color: #888; text-align: center;"></p>
+        <div class="bottom-panes">
+            <div class="pane" style="color: #0f0;" id="console">Console initialized...</div>
+            <div class="pane" id="preview"></div>
+        </div>
     </div>
 
     <script>
         let pyodide;
-        let peer = null;
-
-        // Load saved code
-        if(localStorage.getItem('bg_code')) {
-            document.getElementById("editor").value = localStorage.getItem('bg_code');
-        }
+        const editor = document.getElementById("editor");
+        const agentOut = document.getElementById("agent-out");
 
         async function init() {
             pyodide = await loadPyodide();
-            window.display_html = (h) => { 
-                if (window.currentConn) window.currentConn.send(h); 
-                console.log("Broadcasting UI update...");
-            };
-            await pyodide.runPython(`import js\ndef display_html(h):\n js.display_html(h)`);
-            document.getElementById("status-text").innerText = "Python Ready";
-            document.getElementById("status-light").classList.add('active');
+            window.display_html = (h) => { document.getElementById("preview").innerHTML = h; };
+            await pyodide.runPython(`import js\ndef display_html(h): js.display_html(h)`);
+            document.getElementById("status").innerText = "OFFLINE READY";
         }
         init();
 
-        function runAndHost() {
-            if (!peer) {
-                const id = 'py-bg-' + Math.floor(Math.random() * 9999);
-                peer = new Peer(id);
-                peer.on('open', (id) => {
-                    document.getElementById("peer-id").innerText = "ID: " + id;
-                    document.getElementById("status-text").innerText = "Server Live (Background)";
-                });
-                peer.on('connection', (conn) => {
-                    window.currentConn = conn;
-                    runPython(); // Execute and send when someone connects
-                });
+        // --- THE ACTIVE AGENT LOGIC ---
+        function askAgent() {
+            const input = document.getElementById("agent-input");
+            const cmd = input.value.toLowerCase();
+            input.value = "";
+
+            if (cmd.includes("button")) {
+                agentOut.innerText = "Generating button code...";
+                editor.value += `\ndisplay_html("<button style='padding:20px; background:purple; color:white;'>Dynamic Button</button>")`;
+                runPython();
+            } else if (cmd.includes("clear")) {
+                editor.value = "";
+                agentOut.innerText = "Code cleared.";
+            } else if (cmd.includes("loop")) {
+                editor.value += `\nfor i in range(5):\n    print(f"Looping: {i}")`;
+                agentOut.innerText = "Added a for-loop.";
+            } else if (cmd.includes("hello")) {
+                agentOut.innerText = "Hello! I can write loops, buttons, and clear your console.";
+            } else {
+                agentOut.innerText = "I don't know that yet. Try 'make a button'.";
             }
-            runPython();
         }
 
         async function runPython() {
             try {
                 await pyodide.runPythonAsync(`import sys, io; sys.stdout = io.StringIO()`);
-                await pyodide.runPythonAsync(document.getElementById("editor").value);
-            } catch (e) { console.error(e); }
+                await pyodide.runPythonAsync(editor.value);
+                document.getElementById("console").innerText = pyodide.runPython("sys.stdout.getvalue()");
+            } catch (e) { document.getElementById("console").innerText = e; }
         }
 
-        // --- THE BACKGROUND MAGIC ---
+        // --- SERVICE WORKER (OFFLINE SUPPORT) ---
         if ('serviceWorker' in navigator) {
-            const swSource = `
-                self.addEventListener('install', (event) => {
-                    self.skipWaiting();
-                });
-                self.addEventListener('activate', (event) => {
-                    event.waitUntil(self.clients.claim());
-                });
-                // Background Sync / Push could be added here to wake up the script
+            const swCode = `
+                const CACHE_NAME = 'py-offline-v1';
+                const ASSETS = [
+                    'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js',
+                    'https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js'
+                ];
+                self.addEventListener('install', e => e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS))));
+                self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));
             `;
-            const blob = new Blob([swSource], { type: 'text/javascript' });
+            const blob = new Blob([swCode], { type: 'text/javascript' });
             navigator.serviceWorker.register(URL.createObjectURL(blob));
         }
     </script>
