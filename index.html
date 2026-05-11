@@ -3,63 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PyOS Type-Safe</title>
+    <title>PyOS Safe-Type</title>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
     <style>
-        :root { --accent: #bb86fc; --bg: #000; }
-        body { margin: 0; background: var(--bg); color: #fff; font-family: system-ui; height: 100vh; display: flex; flex-direction: column; }
-        .tabs { display: flex; background: #111; }
-        .tab-btn { flex: 1; padding: 15px; border: none; background: none; color: #666; font-weight: bold; border-bottom: 2px solid #333; }
-        .tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
-        .view { flex: 1; display: none; }
-        .view.active { display: block; }
-        textarea { width: 100%; height: 100%; background: #000; color: #0f0; padding: 15px; font-family: monospace; font-size: 16px; border: none; outline: none; box-sizing: border-box; }
-        #preview { background: white; color: black; height: 100%; padding: 15px; overflow: auto; }
-        .footer { padding: 15px; background: #1a1a1a; display: flex; gap: 10px; }
-        button { background: var(--accent); color: #000; padding: 15px; border: none; border-radius: 8px; font-weight: bold; width: 100%; }
+        body { background: #000; color: #fff; font-family: system-ui; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        #editor { flex: 1; background: #000; color: #0f0; padding: 20px; font-family: monospace; font-size: 18px; border: none; outline: none; }
+        #preview { height: 30%; background: #fff; color: #000; padding: 15px; overflow: auto; }
+        .btn { background: #bb86fc; padding: 20px; border: none; font-weight: bold; width: 100%; font-size: 18px; }
     </style>
 </head>
 <body>
 
-    <div class="tabs">
-        <button class="tab-btn active" onclick="tab('ed')">EDITOR</button>
-        <button class="tab-btn" onclick="tab('pre')">PREVIEW</button>
-    </div>
+    <textarea id="editor" spellcheck="false"># This used to cause a TypeError
+score = 74204
+display_html("Current Slaps: " + str(score))
 
-    <div id="ed" class="view active">
-        <textarea id="editor" spellcheck="false"># Type-Safe Code
-score = 74000
-
-# This would usually cause a TypeError if not for the fix:
-display_html(score) 
-
-print("System: Type-Safe Bridge Active")</textarea>
-    </div>
-
-    <div id="pre" class="view"><div id="preview"></div></div>
-
-    <div class="footer">
-        <button onclick="runPython()">RUN CODE</button>
-    </div>
+# The bridge now handles direct numbers too!
+display_html(score)</textarea>
+    
+    <div id="preview"></div>
+    <button class="btn" onclick="runPython()">RUN PROJECT</button>
 
     <script>
         let py;
-        function tab(id) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            event.target.classList.add('active');
-        }
-
         async function init() {
             py = await loadPyodide();
             
-            // THE TYPE-SAFE BRIDGE
-            window.display_html = (data) => { 
-                // Force data to be a string so JS doesn't throw a TypeError
-                document.getElementById('preview').innerHTML = String(data); 
+            // THE SAFETY BRIDGE
+            window.display_html = (data) => {
+                // This line converts EVERYTHING to a string before showing it
+                // This prevents the "TypeError" on the browser side.
+                document.getElementById('preview').innerHTML = String(data);
             };
-            
+
             await py.runPythonAsync(`
 import js
 def display_html(h):
@@ -72,10 +48,9 @@ def display_html(h):
             if(!py) return;
             try {
                 await py.runPythonAsync(document.getElementById('editor').value);
-                tab('pre');
             } catch (e) {
-                // Shows the EXACT line and type of the error
-                alert(e);
+                // If there is still a TypeError, this alert tells you exactly where
+                alert("TYPE ERROR DETECTED:\n" + e);
             }
         }
     </script>
